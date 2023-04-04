@@ -18,6 +18,9 @@ import (
 // FunctionFile is the file used for the serialized form of a function.
 const FunctionFile = "func.yaml"
 
+// FuncignoreFile works like .gitignore but for func-related tasks such as build
+const FuncignoreFile = ".funcignore"
+
 // Function
 type Function struct {
 	// SpecVersion at which this function is known to be compatible.

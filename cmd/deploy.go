@@ -252,6 +252,7 @@ func runDeploy(cmd *cobra.Command, newClient ClientFactory) (err error) {
 	} else {
 		return builders.ErrUnknownBuilder{Name: f.Build.Builder, Known: KnownBuilders()}
 	}
+	builder = builders.WrapBuilderWithIgnorer(builder)
 
 	client, done := newClient(ClientConfig{Namespace: f.Deploy.Namespace, Verbose: cfg.Verbose},
 		fn.WithRegistry(cfg.Registry),

@@ -209,13 +209,8 @@ func (pp *PipelinesProvider) Run(ctx context.Context, f fn.Function) error {
 // Creates tar stream with the function sources as they were in "./source" directory.
 func sourcesAsTarStream(f fn.Function) *io.PipeReader {
 	ignored := func(p string) bool { return strings.HasPrefix(p, ".git") }
-	if gi, err := gitignore.CompileIgnoreFile(filepath.Join(f.Root, ".gitignore")); err == nil {
-		ignored = func(p string) bool {
-			if strings.HasPrefix(p, ".git") {
-				return true
-			}
-			return gi.MatchesPath(p)
-		}
+	if gi, err := gitignore.CompileIgnoreFile(filepath.Join(f.Root, fn.FuncignoreFile)); err == nil {
+		ignored = gi.MatchesPath
 	}
 
 	pr, pw := io.Pipe()

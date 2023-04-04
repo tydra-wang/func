@@ -180,6 +180,7 @@ func runBuild(cmd *cobra.Command, _ []string, newClient ClientFactory) (err erro
 	} else {
 		return builders.ErrUnknownBuilder{Name: f.Build.Builder, Known: KnownBuilders()}
 	}
+	builder = builders.WrapBuilderWithIgnorer(builder)
 
 	client, done := newClient(ClientConfig{Verbose: cfg.Verbose},
 		fn.WithRegistry(cfg.Registry),

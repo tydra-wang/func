@@ -182,7 +182,7 @@ func (b *Builder) Build(ctx context.Context, f fn.Function) (err error) {
 		return errors.New("Unable to build via the s2i builder.")
 	}
 
-	var impl = b.impl
+	impl := b.impl
 	// Create the S2I builder instance if not overridden
 	if impl == nil {
 		impl, _, err = strategies.Strategy(nil, cfg, build.Overrides{})

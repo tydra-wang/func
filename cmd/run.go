@@ -124,6 +124,7 @@ func runRun(cmd *cobra.Command, args []string, newClient ClientFactory) (err err
 	} else {
 		return builders.ErrUnknownBuilder{Name: cfg.Builder, Known: KnownBuilders()}
 	}
+	builder = builders.WrapBuilderWithIgnorer(builder)
 
 	// Client for use running (and potentially building), using the config
 	// gathered plus any additional option overrieds (such as for providing

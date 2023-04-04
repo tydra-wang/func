@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"time"
 
+	ignore "github.com/sabhiram/go-gitignore"
 	"knative.dev/func/pkg/utils"
 )
 
@@ -569,8 +570,12 @@ func (c *Client) Init(cfg Function) (err error) {
 	// Create a new function (in memory)
 	f := NewFunctionWith(cfg)
 
-	// Create a .func diretory which is also added to a .gitignore
+	// Create a .func directory which is also added to a .gitignore
 	if err = ensureRuntimeDir(f); err != nil {
+		return
+	}
+
+	if err = createFuncignoreFile(f); err != nil {
 		return
 	}
 
@@ -633,6 +638,22 @@ func ensureRuntimeDir(f Function) error {
 `
 	return os.WriteFile(filepath.Join(f.Root, ".gitignore"), []byte(gitignore), 0644)
 
+}
+
+// createFuncignoreFile creates a .funcignore file in the root of the given function.
+func createFuncignoreFile(f Function) error {
+	file := filepath.Join(f.Root, FuncignoreFile)
+	_, err := os.Stat(file)
+	if err == nil {
+		return nil
+	}
+	if !os.IsNotExist(err) {
+		return err
+	}
+	funcignore := `.git
+.func
+`
+	return os.WriteFile(file, []byte(funcignore), 0644)
 }
 
 // Build the function at path. Errors if the function is either unloadable or does
@@ -1105,10 +1126,12 @@ func Built(path string) bool {
 		return false
 	}
 
+	fmt.Println("------5")
 	if stamp != hash {
 		return false
 	}
 
+	fmt.Println("------6")
 	// Function has a populated image, existing buildstamp, and the calculated
 	// fingerprint has not changed.
 	// It's a pretty good chance the thing doesn't need to be rebuilt, though
@@ -1135,12 +1158,21 @@ func buildStamp(path string) string {
 // the files within a function's root.
 func fingerprint(f Function) (string, error) {
 	h := sha256.New()
-	err := filepath.Walk(f.Root, func(path string, info fs.FileInfo, err error) error {
+	// Always ignore .func, .git, and files filtrred by .funcignore
+	fi, err := ignore.CompileIgnoreFileAndLines(filepath.Join(f.Root, FuncignoreFile), RunDataDir, ".git")
+	if err != nil {
+		return "", err
+	}
+	err = filepath.Walk(f.Root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		// Always ignore .func, .git (TODO: .funcignore)
-		if info.IsDir() && (info.Name() == RunDataDir || info.Name() == ".git") {
+
+		rel, err := filepath.Rel(path, f.Root)
+		if err != nil {
+			return err
+		}
+		if fi.MatchesPath(rel) {
 			return filepath.SkipDir
 		}
 		fmt.Fprintf(h, "%v:%v:", path, info.ModTime().UnixNano())
